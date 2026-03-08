@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Company Parts Entry</title>
+
+<style>
+body{
+font-family: Arial, sans-serif;
+padding:20px;
+}
+
+table{
+border-collapse: collapse;
+width:100%;
+max-width:900px;
+margin-top:20px;
+}
+
+th, td{
+border:1px solid #ccc;
+padding:8px;
+}
+
+th{
+background:#f2f2f2;
+}
+
+input{
+width:80px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>Company Parts Quantity Form</h2>
+
+<label><b>Select Company:</b></label>
+
+<select id="company" onchange="showParts()">
+<option value="">-- Select Company --</option>
+<option value="sharda">Sharda Motors</option>
+<option value="amtekpress">Amtek Auto pressing</option>
+<option value="devchhaya">Devchhaya</option>
+<option value="tapovan">Tapovan Auto ltd</option>
+<option value="smt">SMT Auto Solutions LLP</option>
+</select>
+
+
+<div id="partsArea"></div>
+
+
+<script>
+
+const parts = {
+
+sharda: [
+
+"Assy Mud Guard Mtg Pipe Lwr RH (23-44-260-0009)(1590N)",
+"Assy Mud Guard Mtg Pipe 31T (23-44-260-0008)(00990N)",
+"Assly RR Mtg Pipe Upr LH (23-44-260-0018)(00330N)",
+"Assly RR Mtg Pipe Upr RH (23-44-260-0019)(00530N)",
+"Assly RR Mtg Pipe Lwr LH (23-44-260-0016)(00360N)",
+"Assly Bracket Snorkel Lwr Half (23-44-260-0022)(00150N)",
+"Frout Pipe Assy (23-44-260-0024)(00670N)",
+"Assly RR Mtg Pipe Lwr RH (23-44-260-0017)(00370N)",
+"Bracket Snorkel Lower Half (23-44-260-0020)(00020N)",
+"Assly Mudguard Pipe Lwr RH (23-44-260-0021)(01220N)",
+"ARM Aslly LWR Cont LH (23-44-285-0001)(06660N)",
+"ARM Aslly LWR Cont RH (23-44-285-0002)(06650N)",
+"ARM Sub LWR LH (23-44-205-0002)(07550N)",
+"ARM Sub LWR RH (23-44-205-0001)(07560N)",
+"Pipe Duct to Hose (23-44-260-0042)",
+"ARM ASSY Upper RR RH (23-44-289-0002)",
+"ARM ASSY Lower RR (23-44-289-0001)",
+"Assy Front Pipe B (49T) 6503AAB00540N",
+"Front Pipe A 6503AAB00040N (23-44-260-0001)",
+"Clamp Front Pipe W/O (6503CAB00020N)",
+"Tail Pipe 25 Ton (6503AAB00070N)",
+"Tail Pipe 40 Ton (6503AAB00060N)",
+"Front Pipe Assy (6503AAB00670N)",
+"Assy Flex Pipe (6503AAB00640N)"
+],
+
+amtekpress: [
+
+"Bkt Assy Intercooler - W208 (02220N)",
+"Bkt Assy Intercooler - W208 (01700N)",
+"Bkt Assy Intercooler - W207 (0270N)",
+"Bkt Assy Intercooler - W205",
+"Bkt Assy Intercooler - W204",
+"Spare Tyre Carrier Kit (P-405)",
+"Bottom Plate LH (5340N)",
+"Bottom Plate RH (5330N)",
+"Assy Pipe Strct Footstep LH-BSVI (0380N)",
+"Assy Pipe Strct Footstep RH-BSVI (0390N)",
+"Assy Rear Tilt Hanele (400N)",
+"BRKT FRT Floor HVAC Locater (1900N)",
+"REAR MTG PIPE ASSY UPPER RH (2150N)",
+"SNORKL BKT ASSY (0840N)",
+"Handle Big RH (0100N)",
+"Handle Big LH (090N)",
+"Handle Small LH (050N)",
+"Handle Small RH (060N)"
+],
+
+devchhaya: [
+
+"Cross Member Assy Tail Lamp MTG (550131700101)",
+"Channel (264131208206)",
+"Gusset 7 Hole (264131208272)",
+"Reinforcement Helper Spring BKT (207831207145)",
+"Assy Support Tube (264126810108)",
+"Gusset LH (282131208208)",
+"Gusset RH (282131208209)",
+"Bracket Assy Anti Roll Bar MTG Front RH",
+"Bracket Assy Anti Roll Bar MTG Front LH",
+"Assy MTG Bkt Fuel Filler Neck (289647100130)"
+],
+
+tapovan: [
+
+"Wind Deflector AC",
+"BRACKET ASSEMBLY L 7101LAC01930N",
+"BRACKET ASSEMBLY BASE WATER TANK",
+"BRACKET ASSEMBLY REAR WATER TANK",
+"ASSY FUEL COOLER BRACKET LH",
+"CROSSMEMBER ASSEMBLY LIFT AXLE",
+"H5 PBL LEVER ARM ASSY 1.6",
+"LH BKT (GMI000758)",
+"RH BKT (GMI000756)",
+"Center Beam (GMI001992)"
+],
+
+smt: [
+
+"TLSPV CNG BKT",
+"Bearing Cover P",
+"Bracket Underhood Fuel Lines (1010N)",
+"Lower Arm Big",
+"Upper Arm Big",
+"Lower Arm Small",
+"Upper Arm Small",
+"Base Plate New",
+"Base Plate Old",
+"Top Mounting Bolero",
+"Top Mounting W201",
+"Top Mounting P405/P409"
+]
+
+};
+
+
+function showParts(){
+
+const company = document.getElementById("company").value;
+const area = document.getElementById("partsArea");
+
+if(!company){
+area.innerHTML="";
+return;
+}
+
+let html = "<table>";
+html += "<tr><th>Part</th><th>Quantity</th></tr>";
+
+parts[company].forEach(p => {
+
+html += `<tr>
+<td>${p}</td>
+<td><input type="number" min="0"></td>
+</tr>`;
+
+});
+
+html += "</table>";
+
+area.innerHTML = html;
+
+}
+
+</script>
+
+</body>
+</html>
