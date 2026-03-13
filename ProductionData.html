@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Production Entry System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Arial;margin:20px;background:#f4f6f8;}
+.container{max-width:900px;margin:auto;background:white;padding:20px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,0.1);}
+h2{text-align:center;}
+input,select{padding:8px;margin:5px 0;width:100%;}
+table{width:100%;border-collapse:collapse;margin-top:15px;}
+th,td{border:1px solid #ddd;padding:8px;vertical-align:top;}
+th{background:#eee;}
+button{padding:10px 15px;margin-top:10px;border:none;background:#2b7cff;color:white;border-radius:5px;cursor:pointer;}
+button:hover{background:#1a5fd0;}
+.actionRow{display:flex;gap:10px;flex-wrap:wrap;}
+.actionRow button{margin-top:0;}
+#resultBox,#onlineResults{margin-top:16px;padding:12px;border-radius:6px;background:#f1f7ff;border:1px solid #b9d4ff;display:none;}
+#statusText,#onlineStatus{margin-top:10px;font-weight:700;}
+.smallHint{font-size:13px;color:#555;margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Production Entry</h2>
+<div id="login">
+<h3>Supervisor Login</h3>
+<input id="supervisorName" placeholder="Enter supervisor Name">
+<button onclick="start()">Start</button>
+</div>
+<div id="formArea" style="display:none;">
+<label>Date</label>
+<input type="date" id="date">
+<label>Time</label>
+<input type="time" id="time">
+<label>Challan No</label>
+<input id="challanNo" placeholder="Enter challan number">
+<label>Company</label>
+<select id="company" onchange="showParts()">
+<option value="">Select Company</option>
+<option value="sharda">Sharda Motors</option>
+<option value="amtek">Amtek Auto Pressing</option>
+<option value="dev">Devchhaya</option>
+<option value="tapovan">Tapovan Auto Ltd</option>
+<option value="smt">SMT Auto Solutions</option>
+</select>
+<input id="search" placeholder="Search Part" onkeyup="filterParts()">
+<div id="partsArea"></div>
+<h3>Total Quantity: <span id="total">0</span></h3>
+<div class="actionRow">
+<button onclick="exportExcel()">Export to Excel</button>
+<button onclick="submitData()">Submit</button>
+<button onclick="loadOnlineResults()">Load Online Results</button>
+</div>
+<div id="statusText"></div>
+<div id="resultBox"></div>
+<div id="onlineStatus"></div>
+<div id="onlineResults"></div>
+<p class="smallHint">To show online records, your Google Apps Script must support <b>doGet(e)</b> with <b>?action=list</b> and return JSON. If you see <b>"Script function not found: doGet"</b>, update code and deploy a new Web App version.</p>
+</div>
+</div>
+<script>
+let supervisor="";
+let partsData={
+sharda:["Assy Mud Guard Mtg Pipe Lwr RH","Assy Mud Guard Mtg Pipe 31T","Assly RR Mtg Pipe Upr LH","Assly RR Mtg Pipe Upr RH","Assly RR Mtg Pipe Lwr LH","Bracket Snorkel Lower Half","Front Pipe Assy","Tail Pipe 25 Ton","Tail Pipe 40 Ton"],
+amtek:["Bkt Assy Intercooler W208","Bottom Plate LH","Bottom Plate RH","Assy Rear Tilt Handle","Footstep LH","Footstep RH","Handle Big RH","Handle Big LH"],
+dev:["Cross Member Assy Tail Lamp","Channel","Gusset 7 Hole","Support Tube","Gusset LH","Gusset RH"],
+tapovan:["Wind Deflector AC","Bracket Assembly Water Tank","Crossmember Lift Axle","LH BKT","RH BKT","Center Beam"],
+smt:["TLSPV CNG BKT","Bearing Cover","Lower Arm Big","Upper Arm Big","Lower Arm Small","Upper Arm Small"]
+};
+
+function start(){
+supervisor=document.getElementById("supervisorName").value.trim();
+if(supervisor===""){alert("Enter supervisor name");return;}
+document.getElementById("login").style.display="none";
+document.getElementById("formArea").style.display="block";
+}
+
+function showParts(){
+let company=document.getElementById("company").value;
+let area=document.getElementById("partsArea");
+if(!company){area.innerHTML="";calcTotal();return;}
+let html="<table id='partsTable'>";
+html+="<tr><th>Part</th><th>Qty</th></tr>";
+partsData[company].forEach(p=>{
+html+=`<tr><td>${p}</td><td><input type="number" min="0" onchange="calcTotal()"></td></tr>`;
+});
+html+="</table>";
+area.innerHTML=html;
+calcTotal();
+}
+
+function calcTotal(){
+let inputs=document.querySelectorAll("#partsTable input");
+let total=0;
+inputs.forEach(i=>{total+=Number(i.value)||0;});
+document.getElementById("total").innerText=total;
+}
+
+function filterParts(){
+let filter=document.getElementById("search").value.toLowerCase();
+let rows=document.querySelectorAll("#partsTable tr");
+rows.forEach((r,i)=>{
+if(i===0)return;
+let text=r.innerText.toLowerCase();
+r.style.display=text.includes(filter)?"":"none";
+});
+}
+
+function exportExcel(){
+let table=document.getElementById("partsTable");
+if(!table){alert("Please select a company first.");return;}
+let html=table.outerHTML;
+let url='data:application/vnd.ms-excel,' + encodeURIComponent(html);
+let link=document.createElement("a");
+link.href=url;
+link.download="production.xls";
+link.click();
+}
+
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbzz9_UvCmUhwxC_j0GbelQnYDDWZj7FM2gPcDywprPp_zJkqN0HlgWuFawFb9uQUncN/exec";
+
+function renderResult(data){
+const resultBox=document.getElementById("resultBox");
+const totalQty=data.parts.reduce((sum,p)=>sum+Number(p.qty),0);
+const rows=data.parts.length
+? data.parts.map(p=>`<li>${p.part} - ${p.qty}</li>`).join("")
+: "<li>No quantities entered.</li>";
+resultBox.innerHTML=`
+<h4>Latest Submission</h4>
+<p><b>Supervisor:</b> ${data.supervisor}</p>
+<p><b>Company:</b> ${data.company}</p>
+<p><b>Date:</b> ${data.date}</p>
+<p><b>Time:</b> ${data.time || "-"}</p>
+<p><b>Challan No:</b> ${data.challanNo || "-"}</p>
+<p><b>Total Qty:</b> ${totalQty}</p>
+<ul>${rows}</ul>`;
+resultBox.style.display="block";
+}
+
+function submitData(){
+let table=document.getElementById("partsTable");
+if(!table){alert("Please select a company first.");return;}
+let supervisorName=document.getElementById("supervisorName").value;
+let company=document.getElementById("company").value;
+let date=document.getElementById("date").value;
+let time=document.getElementById("time").value;
+let challanNo=document.getElementById("challanNo").value.trim();
+let statusText=document.getElementById("statusText");
+let rows=document.querySelectorAll("#partsTable tr");
+let parts=[];
+rows.forEach((r,i)=>{
+if(i===0)return;
+let part=r.cells[0].innerText;
+let qty=Number(r.cells[1].querySelector("input").value);
+if(qty>0){parts.push({part:part,qty:qty});}
+});
+const payload={supervisor:supervisorName,company:company,date:date,time:time,challanNo:challanNo,parts:parts};
+renderResult(payload);
+statusText.innerText="Saving...";
+fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(payload)})
+.then(res=>res.text())
+.then(msg=>{statusText.innerText=`Data Saved: ${msg || 'Success'}`;})
+.catch(()=>{statusText.innerText="Could not save online, but your result is shown above.";});
+}
+
+function normalizeRecords(responseData){
+if(Array.isArray(responseData)){return responseData;}
+if(Array.isArray(responseData.data)){return responseData.data;}
+if(Array.isArray(responseData.records)){return responseData.records;}
+if(Array.isArray(responseData.results)){return responseData.results;}
+return [];
+}
+
+function renderOnlineRecords(records){
+const onlineResults=document.getElementById("onlineResults");
+if(!records.length){
+onlineResults.innerHTML="<h4>Online Saved Records</h4><p>No online records found.</p>";
+onlineResults.style.display="block";
+return;
+}
+let html="<h4>Online Saved Records</h4>";
+html+="<table><tr><th>Date</th><th>Time</th><th>Challan No</th><th>Supervisor</th><th>Company</th><th>Total Qty</th><th>Items</th></tr>";
+records.forEach(row=>{
+const itemList=(row.parts||[]).map(p=>`${p.part} (${p.qty})`).join("<br>") || "-";
+const total=(row.parts||[]).reduce((sum,p)=>sum+Number(p.qty||0),0);
+html+=`<tr>
+<td>${row.date||"-"}</td>
+<td>${row.time||"-"}</td>
+<td>${row.challanNo||"-"}</td>
+<td>${row.supervisor||"-"}</td>
+<td>${row.company||"-"}</td>
+<td>${total}</td>
+<td>${itemList}</td>
+</tr>`;
+});
+html+="</table>";
+onlineResults.innerHTML=html;
+onlineResults.style.display="block";
+}
+
+function loadOnlineResults(){
+const onlineStatus=document.getElementById("onlineStatus");
+onlineStatus.innerText="Loading online records...";
+fetch(`${SCRIPT_URL}?action=list`)
+.then(res=>res.text())
+.then(text=>{
+let parsed;
+try{parsed=JSON.parse(text);}catch(e){throw new Error("Invalid JSON response");}
+const records=normalizeRecords(parsed);
+renderOnlineRecords(records);
+onlineStatus.innerText=`Loaded ${records.length} online record(s).`;
+})
+.catch(()=>{
+onlineStatus.innerText="Could not load online results. Update Apps Script doGet to return JSON for ?action=list.";
+});
+}
+</script>
+</body>
+</html>
